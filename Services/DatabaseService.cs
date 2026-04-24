@@ -30,6 +30,7 @@ public class DatabaseService
             await _database.CreateTableAsync<ClassSchedule>();
             await _database.CreateTableAsync<User>();
             await _database.CreateTableAsync<Assignment>();
+            await _database.CreateTableAsync<ClassAttendance>();
             _isInitialized = true;
         }
         finally
@@ -226,5 +227,143 @@ public class DatabaseService
             
             return overlap;
         });
+    }
+
+    // Attendance CRUD Methods
+    public async Task<int> RecordAttendanceAsync(ClassAttendance attendance)
+    {
+        await InitAsync();
+        attendance.CreatedAt = DateTime.Now;
+
+        // Check if attendance record already exists for this class and date
+        var existing = await _database!.Table<ClassAttendance>()
+            .Where(a => a.ClassScheduleId == attendance.ClassScheduleId && a.Date.Date == attendance.Date.Date)
+            .FirstOrDefaultAsync();
+
+        if (existing != null)
+        {
+            // Update existing record
+            existing.Status = attendance.Status;
+            existing.Notes = attendance.Notes;
+            existing.CreatedAt = DateTime.Now;
+            return await _database.UpdateAsync(existing);
+        }
+        else
+        {
+            // Insert new record
+            return await _database.InsertAsync(attendance);
+        }
+    }
+
+    public async Task<ClassAttendance?> GetAttendanceForClassAndDateAsync(int classScheduleId, DateTime date)
+    {
+        await InitAsync();
+        return await _database!.Table<ClassAttendance>()
+            .Where(a => a.ClassScheduleId == classScheduleId && a.Date.Date == date.Date)
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task<List<ClassAttendance>> GetAttendanceForClassAsync(int classScheduleId, DateTime? startDate = null, DateTime? endDate = null)
+    {
+        await InitAsync();
+        var query = _database!.Table<ClassAttendance>()
+            .Where(a => a.ClassScheduleId == classScheduleId);
+
+        if (startDate.HasValue)
+            query = query.Where(a => a.Date >= startDate.Value);
+
+        if (endDate.HasValue)
+            query = query.Where(a => a.Date <= endDate.Value);
+
+        return await query.OrderByDescending(a => a.Date).ToListAsync();
+    }
+
+    public async Task<List<ClassAttendance>> GetAttendanceForDateAsync(DateTime date)
+    {
+        await InitAsync();
+        return await _database!.Table<ClassAttendance>()
+            .Where(a => a.Date.Date == date.Date)
+            .OrderBy(a => a.CreatedAt)
+            .ToListAsync();
+    }
+
+    public async Task<(int Attended, int Missed, int Excused, int Late, int Total, double Rate)> GetAttendanceStatisticsAsync(int classScheduleId)
+    {
+        await InitAsync();
+        var records = await _database!.Table<ClassAttendance>()
+            .Where(a => a.ClassScheduleId == classScheduleId)
+            .ToListAsync();
+
+        var attended = records.Count(a => a.Status == AttendanceStatus.Attended);
+        var missed = records.Count(a => a.Status == AttendanceStatus.Missed);
+        var excused = records.Count(a => a.Status == AttendanceStatus.Excused);
+        var late = records.Count(a => a.Status == AttendanceStatus.Late);
+        var total = records.Count;
+        var rate = total > 0 ? (double)attended / total * 100 : 0;
+
+        return (attended, missed, excused, late, total, rate);
+    }
+
+    public async Task<(int Attended, int Missed, int Excused, int Late, int Total, double Rate)> GetOverallAttendanceStatsAsync(DateTime? startDate = null, DateTime? endDate = null)
+    {
+        await InitAsync();
+        var query = _database!.Table<ClassAttendance>();
+
+        List<ClassAttendance> records;
+        if (startDate.HasValue && endDate.HasValue)
+        {
+            records = await query.Where(a => a.Date >= startDate.Value && a.Date <= endDate.Value).ToListAsync();
+        }
+        else if (startDate.HasValue)
+        {
+            records = await query.Where(a => a.Date >= startDate.Value).ToListAsync();
+        }
+        else if (endDate.HasValue)
+        {
+            records = await query.Where(a => a.Date <= endDate.Value).ToListAsync();
+        }
+        else
+        {
+            records = await query.ToListAsync();
+        }
+
+        var attended = records.Count(a => a.Status == AttendanceStatus.Attended);
+        var missed = records.Count(a => a.Status == AttendanceStatus.Missed);
+        var excused = records.Count(a => a.Status == AttendanceStatus.Excused);
+        var late = records.Count(a => a.Status == AttendanceStatus.Late);
+        var total = records.Count;
+        var rate = total > 0 ? (double)attended / total * 100 : 0;
+
+        return (attended, missed, excused, late, total, rate);
+    }
+
+    public async Task<int> DeleteAttendanceAsync(int attendanceId)
+    {
+        await InitAsync();
+        var attendance = await _database!.Table<ClassAttendance>().Where(a => a.Id == attendanceId).FirstOrDefaultAsync();
+        if (attendance != null)
+            return await _database.DeleteAsync(attendance);
+        return 0;
+    }
+
+    public async Task<int> DeleteAttendanceForClassAndDateAsync(int classScheduleId, DateTime date)
+    {
+        await InitAsync();
+        var attendance = await _database!.Table<ClassAttendance>()
+            .Where(a => a.ClassScheduleId == classScheduleId && a.Date.Date == date.Date)
+            .FirstOrDefaultAsync();
+
+        if (attendance != null)
+            return await _database.DeleteAsync(attendance);
+        return 0;
+    }
+
+    public async Task<List<ClassAttendance>> GetRecentAttendanceAsync(int count = 50)
+    {
+        await InitAsync();
+        return await _database!.Table<ClassAttendance>()
+            .OrderByDescending(a => a.Date)
+            .Take(count)
+            .ToListAsync();
     }
 }

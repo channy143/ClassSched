@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ClassSched.ViewModels"
+             xmlns:models="clr-namespace:ClassSched.Models"
+             xmlns:converters="clr-namespace:ClassSched.Converters"
+             x:Class="ClassSched.Views.AttendanceHistoryPage"
+             x:DataType="vm:AttendanceHistoryViewModel"
+             Title="Attendance History">
+
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Back" Command="{Binding GoBackCommand}" IconImageSource="{FontImageSource Glyph='←'}" />
+    </ContentPage.ToolbarItems>
+
+    <Grid RowDefinitions="Auto,Auto,Auto,*">
+        <!-- Statistics Cards -->
+        <Grid Grid.Row="0" ColumnDefinitions="*,*,*,*" Padding="15,10" BackgroundColor="{AppThemeBinding Light=#F5F5F5, Dark=#2C2C2E}">
+            <VerticalStackLayout Grid.Column="0" HorizontalOptions="Center">
+                <Label Text="{Binding TotalAttended}" 
+                       FontSize="24" 
+                       FontAttributes="Bold" 
+                       TextColor="#4CAF50"
+                       HorizontalOptions="Center"/>
+                <Label Text="Attended" 
+                       FontSize="11" 
+                       TextColor="{AppThemeBinding Light=#666, Dark=#999}"
+                       HorizontalOptions="Center"/>
+            </VerticalStackLayout>
+            <VerticalStackLayout Grid.Column="1" HorizontalOptions="Center">
+                <Label Text="{Binding TotalMissed}" 
+                       FontSize="24" 
+                       FontAttributes="Bold" 
+                       TextColor="#F44336"
+                       HorizontalOptions="Center"/>
+                <Label Text="Missed" 
+                       FontSize="11" 
+                       TextColor="{AppThemeBinding Light=#666, Dark=#999}"
+                       HorizontalOptions="Center"/>
+            </VerticalStackLayout>
+            <VerticalStackLayout Grid.Column="2" HorizontalOptions="Center">
+                <Label Text="{Binding TotalExcused}" 
+                       FontSize="24" 
+                       FontAttributes="Bold" 
+                       TextColor="#FF9800"
+                       HorizontalOptions="Center"/>
+                <Label Text="Excused" 
+                       FontSize="11" 
+                       TextColor="{AppThemeBinding Light=#666, Dark=#999}"
+                       HorizontalOptions="Center"/>
+            </VerticalStackLayout>
+            <VerticalStackLayout Grid.Column="3" HorizontalOptions="Center">
+                <Label Text="{Binding AttendanceRate, StringFormat='{}{0:F0}%'}" 
+                       FontSize="24" 
+                       FontAttributes="Bold" 
+                       TextColor="#512BD4"
+                       HorizontalOptions="Center"/>
+                <Label Text="Rate" 
+                       FontSize="11" 
+                       TextColor="{AppThemeBinding Light=#666, Dark=#999}"
+                       HorizontalOptions="Center"/>
+            </VerticalStackLayout>
+        </Grid>
+
+        <!-- Filter Controls -->
+        <VerticalStackLayout Grid.Row="1" Padding="15,10" Spacing="10">
+            <!-- Class Picker -->
+            <Frame BackgroundColor="{AppThemeBinding Light=White, Dark=#2C2C2E}" 
+                   BorderColor="{AppThemeBinding Light=#E5E5EA, Dark=#3A3A3C}" 
+                   CornerRadius="10" 
+                   Padding="10,5">
+                <Picker Title="All Classes"
+                        ItemsSource="{Binding Classes}"
+                        SelectedItem="{Binding SelectedClass}"
+                        ItemDisplayBinding="{Binding SubjectName}"
+                        BackgroundColor="Transparent"
+                        TextColor="{AppThemeBinding Light=#1C1C1E, Dark=#FFFFFF}"
+                        TitleColor="#C7C7CC"/>
+            </Frame>
+
+            <!-- Date Range Buttons -->
+            <HorizontalStackLayout Spacing="10" HorizontalOptions="Center">
+                <Button Text="Last 7 Days" 
+                        FontSize="12"
+                        CornerRadius="15"
+                        HeightRequest="32"
+                        Padding="15,0"
+                        BackgroundColor="#512BD4"
+                        TextColor="White"
+                        Command="{Binding SetLast7DaysAsyncCommand}"/>
+                <Button Text="Last 30 Days" 
+                        FontSize="12"
+                        CornerRadius="15"
+                        HeightRequest="32"
+                        Padding="15,0"
+                        BackgroundColor="#512BD4"
+                        TextColor="White"
+                        Command="{Binding SetLast30DaysAsyncCommand}"/>
+                <Button Text="This Month" 
+                        FontSize="12"
+                        CornerRadius="15"
+                        HeightRequest="32"
+                        Padding="15,0"
+                        BackgroundColor="#512BD4"
+                        TextColor="White"
+                        Command="{Binding SetThisMonthAsyncCommand}"/>
+            </HorizontalStackLayout>
+        </VerticalStackLayout>
+
+        <!-- Loading Indicator -->
+        <ActivityIndicator Grid.Row="2"
+                          IsRunning="{Binding IsLoading}" 
+                          IsVisible="{Binding IsLoading}"
+                          Color="#512BD4"/>
+
+        <!-- Attendance Records List -->
+        <RefreshView Grid.Row="3" 
+                     IsRefreshing="{Binding IsLoading}" 
+                     Command="{Binding LoadAttendanceRecordsCommand}">
+            <CollectionView ItemsSource="{Binding AttendanceRecords}"
+                            EmptyView="No attendance records found for the selected period.">
+                <CollectionView.ItemsLayout>
+                    <LinearItemsLayout Orientation="Vertical" ItemSpacing="8"/>
+                </CollectionView.ItemsLayout>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <SwipeView>
+                            <SwipeView.RightItems>
+                                <SwipeItems>
+                                    <SwipeItem Text="Delete" 
+                                            BackgroundColor="#E74C3C"
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.DeleteRecordCommand}"
+                                            CommandParameter="{Binding .}" />
+                                </SwipeItems>
+                            </SwipeView.RightItems>
+                            
+                            <Border StrokeShape="RoundRectangle 12" 
+                                    BackgroundColor="{AppThemeBinding Light=White, Dark=#2C2C2E}"
+                                    Stroke="{AppThemeBinding Light=#E0E0E0, Dark=#3A3A3C}"
+                                    StrokeThickness="1"
+                                    Margin="15,4"
+                                    Padding="15">
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <!-- Status Icon -->
+                                    <Border Grid.Column="0"
+                                            BackgroundColor="{Binding StatusColor}"
+                                            StrokeShape="RoundRectangle 15"
+                                            WidthRequest="30"
+                                            HeightRequest="30"
+                                            VerticalOptions="Center">
+                                        <Label Text="{Binding StatusIcon}"
+                                               FontSize="14"
+                                               TextColor="White"
+                                               HorizontalOptions="Center"
+                                               VerticalOptions="Center"/>
+                                    </Border>
+
+                                    <!-- Record Info -->
+                                    <VerticalStackLayout Grid.Column="1" Spacing="3" Margin="12,0">
+                                        <Label Text="{Binding ClassName}" 
+                                               FontSize="16" 
+                                               FontAttributes="Bold"
+                                               TextColor="{AppThemeBinding Light=#1C1C1E, Dark=#FFFFFF}"/>
+                                        <Label Text="{Binding Date, StringFormat='{}{0:dddd, MMMM dd, yyyy}'}" 
+                                               FontSize="12" 
+                                               TextColor="{AppThemeBinding Light=#666, Dark=#999}"/>
+                                        <Label Text="{Binding Notes}" 
+                                               FontSize="11" 
+                                               TextColor="{AppThemeBinding Light=#999, Dark=#777}"
+                                               IsVisible="{Binding Notes, Converter={StaticResource StringIsNotNullOrEmptyConverter}}"/>
+                                    </VerticalStackLayout>
+
+                                    <!-- Status Badge -->
+                                    <Border Grid.Column="2"
+                                            BackgroundColor="{Binding StatusColor}"
+                                            StrokeShape="RoundRectangle 8"
+                                            Padding="8,4"
+                                            VerticalOptions="Start">
+                                        <Label Text="{Binding Status}" 
+                                               FontSize="11" 
+                                               TextColor="White"
+                                               FontAttributes="Bold"/>
+                                    </Border>
+                                </Grid>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ChangeStatusCommand}"
+                                                          CommandParameter="{Binding .}"/>
+                                </Border.GestureRecognizers>
+                            </Border>
+                        </SwipeView>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+    </Grid>
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converters:StringIsNotNullOrEmptyConverter x:Key="StringIsNotNullOrEmptyConverter" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+</ContentPage>

@@ -63,6 +63,23 @@ public partial class ScheduleViewModel : ObservableObject
     [ObservableProperty]
     private DayOfWeek? _filterDay;
 
+    // Attendance tracking
+    [ObservableProperty]
+    private int _attendedTodayCount;
+
+    [ObservableProperty]
+    private int _totalTodayCount;
+
+    [ObservableProperty]
+    private double _weeklyAttendanceRate;
+
+    // Available days for filter chips
+    public DayOfWeek[] AvailableDays { get; } = new[]
+    {
+        DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday,
+        DayOfWeek.Thursday, DayOfWeek.Friday, DayOfWeek.Saturday, DayOfWeek.Sunday
+    };
+
     public ScheduleViewModel(DatabaseService databaseService, NotificationService notificationService)
     {
         _databaseService = databaseService;
@@ -97,11 +114,41 @@ public partial class ScheduleViewModel : ObservableObject
 
             // Load upcoming assignments
             await LoadUpcomingAssignmentsAsync();
+
+            // Load attendance statistics
+            await LoadAttendanceStatisticsAsync();
         }
         finally
         {
             IsLoading = false;
         }
+    }
+
+    private async Task LoadAttendanceStatisticsAsync()
+    {
+        try
+        {
+            // Get overall stats for the last 7 days
+            var stats = await _databaseService.GetOverallAttendanceStatsAsync(DateTime.Now.AddDays(-7), DateTime.Now);
+            WeeklyAttendanceRate = stats.Rate;
+
+            // Get today's attendance
+            var todayAttendance = await _databaseService.GetAttendanceForDateAsync(DateTime.Today);
+            AttendedTodayCount = todayAttendance.Count(a => a.Status == AttendanceStatus.Attended);
+            TotalTodayCount = TodayClasses.Count;
+        }
+        catch
+        {
+            // Silently handle errors - attendance tracking is optional
+            WeeklyAttendanceRate = 0;
+            AttendedTodayCount = 0;
+        }
+    }
+
+    public async Task<AttendanceStatus?> GetAttendanceStatusForClassAsync(int classId, DateTime date)
+    {
+        var record = await _databaseService.GetAttendanceForClassAndDateAsync(classId, date);
+        return record?.Status;
     }
 
     private void CalculateStatistics(List<ClassSchedule> classes)
@@ -209,6 +256,32 @@ public partial class ScheduleViewModel : ObservableObject
         }
 
         FilteredClasses = new ObservableCollection<ClassSchedule>(filtered.ToList());
+
+        // Update displayed collections based on filters
+        UpdateDisplayedCollections(filtered);
+    }
+
+    private void UpdateDisplayedCollections(IEnumerable<ClassSchedule> filtered)
+    {
+        var today = DateTime.Today.DayOfWeek;
+        var filteredList = filtered.ToList();
+
+        // Update TodayClasses - show filtered results if searching or filtering, otherwise show actual today
+        if (!string.IsNullOrWhiteSpace(SearchText) || FilterDay.HasValue)
+        {
+            // When filtering, show all filtered results
+            TodayClasses = new ObservableCollection<ClassSchedule>(filteredList);
+        }
+        else
+        {
+            // No filters - show actual today's classes
+            var todayClasses = filteredList.Where(c => c.DayOfWeek == today).ToList();
+            TodayClasses = new ObservableCollection<ClassSchedule>(todayClasses);
+        }
+
+        // Update WeeklyClasses - group filtered results by day
+        var grouped = filteredList.GroupBy(c => c.DayOfWeek).OrderBy(g => g.Key);
+        WeeklyClasses = new ObservableCollection<IGrouping<DayOfWeek, ClassSchedule>>(grouped);
     }
 
     [RelayCommand]
@@ -286,5 +359,72 @@ public partial class ScheduleViewModel : ObservableObject
         {
             FilterDay = day;
         }
+    }
+
+    // Attendance Commands
+    [RelayCommand]
+    private async Task MarkAttendanceAsync(ClassSchedule classSchedule)
+    {
+        if (classSchedule == null) return;
+
+        var options = new[] { "✓ Attended", "✕ Missed", "⊘ Excused", "⚠ Late", "View History" };
+        var selection = await Shell.Current.DisplayActionSheet(
+            $"Mark attendance for {classSchedule.SubjectName}",
+            "Cancel",
+            null,
+            options);
+
+        if (selection == null || selection == "Cancel") return;
+
+        if (selection == "View History")
+        {
+            await Shell.Current.GoToAsync("AttendanceHistory");
+            return;
+        }
+
+        AttendanceStatus status = selection switch
+        {
+            "✓ Attended" => AttendanceStatus.Attended,
+            "✕ Missed" => AttendanceStatus.Missed,
+            "⊘ Excused" => AttendanceStatus.Excused,
+            "⚠ Late" => AttendanceStatus.Late,
+            _ => AttendanceStatus.Attended
+        };
+
+        var attendance = new ClassAttendance
+        {
+            ClassScheduleId = classSchedule.Id,
+            Date = DateTime.Today,
+            Status = status
+        };
+
+        await _databaseService.RecordAttendanceAsync(attendance);
+        await LoadAttendanceStatisticsAsync();
+
+        // Show confirmation
+        await Shell.Current.DisplayAlert("Attendance Recorded", $"Marked as {status}", "OK");
+    }
+
+    [RelayCommand]
+    private async Task QuickMarkAttendanceAsync((ClassSchedule Class, AttendanceStatus Status) parameter)
+    {
+        var (classSchedule, status) = parameter;
+        if (classSchedule == null) return;
+
+        var attendance = new ClassAttendance
+        {
+            ClassScheduleId = classSchedule.Id,
+            Date = DateTime.Today,
+            Status = status
+        };
+
+        await _databaseService.RecordAttendanceAsync(attendance);
+        await LoadAttendanceStatisticsAsync();
+    }
+
+    [RelayCommand]
+    private async Task GoToAttendanceHistoryAsync()
+    {
+        await Shell.Current.GoToAsync("AttendanceHistory");
     }
 }

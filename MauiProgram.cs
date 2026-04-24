@@ -40,6 +40,7 @@ public static class MauiProgram
         builder.Services.AddTransient<CreateAccountViewModel>();
         builder.Services.AddTransient<AssignmentsViewModel>();
         builder.Services.AddTransient<CalendarViewModel>();
+        builder.Services.AddTransient<AttendanceHistoryViewModel>();
 
         // Register Views
         builder.Services.AddSingleton<SchedulePage>();
@@ -49,6 +50,7 @@ public static class MauiProgram
         builder.Services.AddTransient<CreateAccountPage>();
         builder.Services.AddTransient<AssignmentsPage>();
         builder.Services.AddTransient<CalendarPage>();
+        builder.Services.AddTransient<AttendanceHistoryPage>();
 
         // Register AppShell
         builder.Services.AddSingleton<AppShell>();

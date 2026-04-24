@@ -18,4 +18,9 @@ public partial class SchedulePage : ContentPage
         base.OnAppearing();
         await _viewModel.LoadClassesAsync();
     }
+
+    private async void OnSchedulePageAppearing(object sender, EventArgs e)
+    {
+        await _viewModel.LoadClassesAsync();
+    }
 }

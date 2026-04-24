@@ -7,7 +7,8 @@
              xmlns:sys="clr-namespace:System;assembly=mscorlib"
              x:Class="ClassSched.Views.SchedulePage"
              Title="Class Sched"
-             x:DataType="vm:ScheduleViewModel">
+             x:DataType="vm:ScheduleViewModel"
+             Appearing="OnSchedulePageAppearing">
 
     <ContentPage.ToolbarItems>
         <ToolbarItem Text="Settings" Command="{Binding GoToSettingsCommand}" IconImageSource="{FontImageSource Glyph='⚙️'}" />
@@ -51,20 +52,40 @@
                 <VerticalStackLayout Padding="15" Spacing="15">
                     
                     <!-- Statistics Cards -->
-                    <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
+                    <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="8">
                         <!-- Classes Today -->
                         <Border Grid.Column="0" 
                                 StrokeShape="RoundRectangle 12" 
                                 BackgroundColor="#512BD4"
-                                Padding="10">
+                                Padding="8">
                             <VerticalStackLayout Spacing="2">
                                 <Label Text="{Binding ClassesTodayCount}" 
-                                       FontSize="28" 
+                                       FontSize="24" 
                                        FontAttributes="Bold" 
                                        TextColor="White"
                                        HorizontalOptions="Center"/>
                                 <Label Text="Today" 
-                                       FontSize="11" 
+                                       FontSize="10" 
+                                       TextColor="White"
+                                       Opacity="0.9"
+                                       HorizontalOptions="Center"/>
+                            </VerticalStackLayout>
+                        </Border>
+
+                        <!-- Attendance Rate -->
+                        <Border Grid.Column="1" 
+                                StrokeShape="RoundRectangle 12" 
+                                BackgroundColor="#4CAF50"
+                                Padding="8"
+                                GestureRecognizers="{TapGestureRecognizer Command={Binding GoToAttendanceHistoryCommand}}">
+                            <VerticalStackLayout Spacing="2">
+                                <Label Text="{Binding WeeklyAttendanceRate, StringFormat='{}{0:F0}'}" 
+                                       FontSize="24" 
+                                       FontAttributes="Bold" 
+                                       TextColor="White"
+                                       HorizontalOptions="Center"/>
+                                <Label Text="% Rate" 
+                                       FontSize="10" 
                                        TextColor="White"
                                        Opacity="0.9"
                                        HorizontalOptions="Center"/>
@@ -72,18 +93,18 @@
                         </Border>
 
                         <!-- Total Hours -->
-                        <Border Grid.Column="1" 
+                        <Border Grid.Column="2" 
                                 StrokeShape="RoundRectangle 12" 
                                 BackgroundColor="#FF6B6B"
-                                Padding="10">
+                                Padding="8">
                             <VerticalStackLayout Spacing="2">
                                 <Label Text="{Binding TotalHoursThisWeek, StringFormat='{}{0:F1}'}" 
-                                       FontSize="28" 
+                                       FontSize="22" 
                                        FontAttributes="Bold" 
                                        TextColor="White"
                                        HorizontalOptions="Center"/>
-                                <Label Text="Hours/Week" 
-                                       FontSize="11" 
+                                <Label Text="Hours" 
+                                       FontSize="10" 
                                        TextColor="White"
                                        Opacity="0.9"
                                        HorizontalOptions="Center"/>
@@ -91,20 +112,20 @@
                         </Border>
 
                         <!-- Next Class -->
-                        <Border Grid.Column="2" 
+                        <Border Grid.Column="3" 
                                 StrokeShape="RoundRectangle 12" 
-                                BackgroundColor="#4CAF50"
-                                Padding="10">
+                                BackgroundColor="#FF9800"
+                                Padding="8">
                             <VerticalStackLayout Spacing="2">
                                 <Label Text="{Binding NextClassTimeDisplay}" 
-                                       FontSize="14" 
+                                       FontSize="12" 
                                        FontAttributes="Bold" 
                                        TextColor="White"
                                        HorizontalOptions="Center"
                                        VerticalOptions="Center"
                                        LineBreakMode="TailTruncation"/>
                                 <Label Text="Next" 
-                                       FontSize="11" 
+                                       FontSize="10" 
                                        TextColor="White"
                                        Opacity="0.9"
                                        HorizontalOptions="Center"/>
@@ -147,19 +168,21 @@
                     </Frame>
 
                     <!-- Day Filter Chips -->
-                    <CollectionView ItemsSource="{Binding WeeklyClasses}" 
+                    <CollectionView ItemsSource="{Binding AvailableDays}" 
                                     ItemsLayout="HorizontalList"
                                     HeightRequest="40">
                         <CollectionView.ItemTemplate>
-                            <DataTemplate x:DataType="{x:Type x:Object}">
-                                <Button Text="{Binding Key}"
+                            <DataTemplate x:DataType="{x:Type sys:DayOfWeek}">
+                                <Button Text="{Binding .}"
                                         FontSize="12"
                                         CornerRadius="15"
                                         HeightRequest="30"
                                         Padding="15,0"
                                         Margin="0,0,5,0"
+                                        BackgroundColor="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.FilterDay, Converter={StaticResource DayFilterToColorConverter}, ConverterParameter={Binding .}}"
+                                        TextColor="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.FilterDay, Converter={StaticResource DayFilterToTextColorConverter}, ConverterParameter={Binding .}}"
                                         Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.FilterDayChangedCommand}"
-                                        CommandParameter="{Binding Key}"/>
+                                        CommandParameter="{Binding .}"/>
                             </DataTemplate>
                         </CollectionView.ItemTemplate>
                     </CollectionView>
@@ -228,7 +251,8 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <Label Grid.Column="0" Text="Today's Classes" 
+                        <Label Grid.Column="0" 
+                               Text="{Binding FilterDay, Converter={StaticResource FilterDayToTitleConverter}}"
                                FontSize="18" 
                                FontAttributes="Bold" 
                                TextColor="{AppThemeBinding Light=#1C1C1E, Dark=#FFFFFF}"/>
@@ -265,14 +289,32 @@
                                                     Margin="0,5"
                                                     Padding="15">
                                                 <Grid ColumnDefinitions="Auto,*,Auto">
-                                                    <!-- Color Indicator -->
-                                                    <BoxView Grid.Column="0"
-                                                             WidthRequest="6"
-                                                             HeightRequest="50"
-                                                             CornerRadius="3"
-                                                             BackgroundColor="{Binding ColorCode}"
-                                                             Margin="0,0,12,0" />
- 
+                                                    <!-- Color Indicator with Attendance Status -->
+                                                    <Grid Grid.Column="0" RowSpacing="2" Margin="0,0,12,0">
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="Auto"/>
+                                                            <RowDefinition Height="Auto"/>
+                                                        </Grid.RowDefinitions>
+                                                        <BoxView Grid.Row="0"
+                                                                 WidthRequest="6"
+                                                                 HeightRequest="35"
+                                                                 CornerRadius="3"
+                                                                 BackgroundColor="{Binding ColorCode}" />
+                                                        <!-- Attendance Status Indicator -->
+                                                        <Border Grid.Row="1"
+                                                                WidthRequest="16"
+                                                                HeightRequest="16"
+                                                                StrokeShape="RoundRectangle 8"
+                                                                BackgroundColor="{Binding ., Converter={StaticResource ClassToAttendanceColorConverter}, ConverterParameter={Binding Source={x:Static sys:DateTime.Today}}}"
+                                                                HorizontalOptions="Center">
+                                                            <Label Text="{Binding ., Converter={StaticResource ClassToAttendanceIconConverter}, ConverterParameter={Binding Source={x:Static sys:DateTime.Today}}}"
+                                                                   FontSize="8"
+                                                                   TextColor="White"
+                                                                   HorizontalOptions="Center"
+                                                                   VerticalOptions="Center"/>
+                                                        </Border>
+                                                    </Grid>
+
                                                     <!-- Class Info -->
                                                     <VerticalStackLayout Grid.Column="1" Spacing="4">
                                                         <Label Text="{Binding SubjectName}" 
@@ -291,18 +333,46 @@
                                                                 TextColor="#512BD4" 
                                                                 FontAttributes="Bold" />
                                                     </VerticalStackLayout>
- 
-                                                    <!-- Day Badge -->
-                                                    <Border Grid.Column="2"
-                                                            BackgroundColor="#F0F0F0"
-                                                            StrokeShape="RoundRectangle 8"
-                                                            Padding="8,4">
-                                                        <Label Text="TODAY" 
-                                                                FontSize="10" 
-                                                                TextColor="#512BD4"
-                                                                FontAttributes="Bold" />
-                                                    </Border>
+
+                                                    <!-- Attendance Quick Actions -->
+                                                    <VerticalStackLayout Grid.Column="2" Spacing="4">
+                                                        <Border BackgroundColor="#F0F0F0"
+                                                                StrokeShape="RoundRectangle 8"
+                                                                Padding="6,3">
+                                                            <Label Text="TODAY" 
+                                                                    FontSize="9" 
+                                                                    TextColor="#512BD4"
+                                                                    FontAttributes="Bold" />
+                                                        </Border>
+                                                        <!-- Quick Mark Buttons -->
+                                                        <HorizontalStackLayout Spacing="2" HorizontalOptions="Center">
+                                                            <Button Text="✓"
+                                                                    FontSize="10"
+                                                                    BackgroundColor="#4CAF50"
+                                                                    TextColor="White"
+                                                                    CornerRadius="10"
+                                                                    WidthRequest="22"
+                                                                    HeightRequest="22"
+                                                                    Padding="0"
+                                                                    Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.QuickMarkAttendanceCommand}"
+                                                                    CommandParameter="{Binding .}" />
+                                                            <Button Text="✕"
+                                                                    FontSize="10"
+                                                                    BackgroundColor="#F44336"
+                                                                    TextColor="White"
+                                                                    CornerRadius="10"
+                                                                    WidthRequest="22"
+                                                                    HeightRequest="22"
+                                                                    Padding="0"
+                                                                    Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.QuickMarkAttendanceCommand}"
+                                                                    CommandParameter="{Binding .}" />
+                                                        </HorizontalStackLayout>
+                                                    </VerticalStackLayout>
                                                 </Grid>
+                                                <Border.GestureRecognizers>
+                                                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.MarkAttendanceCommand}"
+                                                                          CommandParameter="{Binding .}"/>
+                                                </Border.GestureRecognizers>
                                             </Border>
                                         </SwipeView>
                                     </DataTemplate>
@@ -383,6 +453,13 @@
     <ContentPage.Resources>
         <ResourceDictionary>
             <converters:StringIsNotNullOrEmptyConverter x:Key="StringIsNotNullOrEmptyConverter" />
+            <converters:DayFilterToColorConverter x:Key="DayFilterToColorConverter" />
+            <converters:DayFilterToTextColorConverter x:Key="DayFilterToTextColorConverter" />
+            <converters:FilterDayToTitleConverter x:Key="FilterDayToTitleConverter" />
+            <converters:AttendanceStatusToColorConverter x:Key="AttendanceStatusToColorConverter" />
+            <converters:AttendanceStatusToIconConverter x:Key="AttendanceStatusToIconConverter" />
+            <converters:ClassToAttendanceColorConverter x:Key="ClassToAttendanceColorConverter" />
+            <converters:ClassToAttendanceIconConverter x:Key="ClassToAttendanceIconConverter" />
         </ResourceDictionary>
     </ContentPage.Resources>
 

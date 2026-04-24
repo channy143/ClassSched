@@ -17,5 +17,7 @@
     <ShellContent Title="AddEditClass" ContentTemplate="{DataTemplate local:AddEditClassPage}" Route="AddEditClass" />
     <ShellContent Title="Settings" ContentTemplate="{DataTemplate local:SettingsPage}" Route="Settings" />
     <ShellContent Title="Assignments" ContentTemplate="{DataTemplate local:AssignmentsPage}" Route="Assignments" />
+    <ShellContent Title="Calendar" ContentTemplate="{DataTemplate local:CalendarPage}" Route="Calendar" />
+    <ShellContent Title="AttendanceHistory" ContentTemplate="{DataTemplate local:AttendanceHistoryPage}" Route="AttendanceHistory" />
 
 </Shell>
