@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ClassSched.ViewModels"
+             xmlns:models="clr-namespace:ClassSched.Models"
+             x:Class="ClassSched.Views.AssignmentsPage"
+             x:DataType="vm:AssignmentsViewModel"
+             Title="Assignments">
+
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Back" Command="{Binding GoBackCommand}" IconImageSource="{FontImageSource Glyph='←'}" />
+        <ToolbarItem Text="Add" Command="{Binding AddAssignmentCommand}" IconImageSource="{FontImageSource Glyph='+'}" />
+    </ContentPage.ToolbarItems>
+
+    <Grid RowDefinitions="Auto,Auto,Auto,*">
+        <!-- Header Stats -->
+        <Grid Grid.Row="0" ColumnDefinitions="*,*,*" Padding="15,10" BackgroundColor="{AppThemeBinding Light=#F5F5F5, Dark=#2C2C2E}">
+            <VerticalStackLayout Grid.Column="0" HorizontalOptions="Center">
+                <Label Text="{Binding OverdueCount}" 
+                       FontSize="24" 
+                       FontAttributes="Bold" 
+                       TextColor="#F44336"
+                       HorizontalOptions="Center"/>
+                <Label Text="Overdue" 
+                       FontSize="12" 
+                       TextColor="{AppThemeBinding Light=#666, Dark=#999}"
+                       HorizontalOptions="Center"/>
+            </VerticalStackLayout>
+            <VerticalStackLayout Grid.Column="1" HorizontalOptions="Center">
+                <Label Text="{Binding DueTodayCount}" 
+                       FontSize="24" 
+                       FontAttributes="Bold" 
+                       TextColor="#FF5722"
+                       HorizontalOptions="Center"/>
+                <Label Text="Due Today" 
+                       FontSize="12" 
+                       TextColor="{AppThemeBinding Light=#666, Dark=#999}"
+                       HorizontalOptions="Center"/>
+            </VerticalStackLayout>
+            <VerticalStackLayout Grid.Column="2" HorizontalOptions="Center">
+                <Label Text="{Binding CompletedCount}" 
+                       FontSize="24" 
+                       FontAttributes="Bold" 
+                       TextColor="#4CAF50"
+                       HorizontalOptions="Center"/>
+                <Label Text="Completed" 
+                       FontSize="12" 
+                       TextColor="{AppThemeBinding Light=#666, Dark=#999}"
+                       HorizontalOptions="Center"/>
+            </VerticalStackLayout>
+        </Grid>
+
+        <!-- Search & Filter -->
+        <VerticalStackLayout Grid.Row="1" Padding="15,10" Spacing="10">
+            <Frame BackgroundColor="{AppThemeBinding Light=White, Dark=#2C2C2E}" 
+                   BorderColor="{AppThemeBinding Light=#E5E5EA, Dark=#3A3A3C}" 
+                   CornerRadius="10" 
+                   Padding="10,5">
+                <Grid ColumnDefinitions="Auto,*">
+                    <Label Grid.Column="0" Text="🔍" FontSize="16" VerticalOptions="Center"/>
+                    <Entry Grid.Column="1" 
+                           Text="{Binding SearchText}" 
+                           Placeholder="Search assignments..."
+                           PlaceholderColor="#C7C7CC"
+                           TextColor="{AppThemeBinding Light=#1C1C1E, Dark=#FFFFFF}"/>
+                </Grid>
+            </Frame>
+
+            <HorizontalStackLayout Spacing="10">
+                <Button Text="All" 
+                        BackgroundColor="{Binding FilterStatus, Converter={StaticResource IntToColorConverter}, ConverterParameter='-1|#512BD4|#E5E5EA'}"
+                        TextColor="{Binding FilterStatus, Converter={StaticResource IntToColorConverter}, ConverterParameter='-1|White|#666'}"
+                        FontSize="12"
+                        CornerRadius="15"
+                        HeightRequest="30"
+                        Padding="15,0"
+                        Command="{Binding FilterStatusChangedCommand}"
+                        CommandParameter="-1"/>
+                <Button Text="Pending" 
+                        BackgroundColor="{Binding FilterStatus, Converter={StaticResource IntToColorConverter}, ConverterParameter='0|#FF9800|#E5E5EA'}"
+                        TextColor="{Binding FilterStatus, Converter={StaticResource IntToColorConverter}, ConverterParameter='0|White|#666'}"
+                        FontSize="12"
+                        CornerRadius="15"
+                        HeightRequest="30"
+                        Padding="15,0"
+                        Command="{Binding FilterStatusChangedCommand}"
+                        CommandParameter="0"/>
+                <Button Text="Completed" 
+                        BackgroundColor="{Binding FilterStatus, Converter={StaticResource IntToColorConverter}, ConverterParameter='1|#4CAF50|#E5E5EA'}"
+                        TextColor="{Binding FilterStatus, Converter={StaticResource IntToColorConverter}, ConverterParameter='1|White|#666'}"
+                        FontSize="12"
+                        CornerRadius="15"
+                        HeightRequest="30"
+                        Padding="15,0"
+                        Command="{Binding FilterStatusChangedCommand}"
+                        CommandParameter="1"/>
+            </HorizontalStackLayout>
+        </VerticalStackLayout>
+
+        <!-- Loading Indicator -->
+        <ActivityIndicator Grid.Row="2"
+                          IsRunning="{Binding IsLoading}" 
+                          IsVisible="{Binding IsLoading}"
+                          Color="#512BD4"/>
+
+        <!-- Assignments List -->
+        <RefreshView Grid.Row="3" 
+                     IsRefreshing="{Binding IsLoading}" 
+                     Command="{Binding RefreshCommand}">
+            <CollectionView ItemsSource="{Binding Assignments}"
+                            EmptyView="No assignments found.">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="models:Assignment">
+                        <SwipeView>
+                            <SwipeView.RightItems>
+                                <SwipeItems>
+                                    <SwipeItem Text="Edit" 
+                                            BackgroundColor="#3498DB"
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.EditAssignmentCommand}"
+                                            CommandParameter="{Binding .}" />
+                                    <SwipeItem Text="Delete" 
+                                            BackgroundColor="#E74C3C"
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.DeleteAssignmentCommand}"
+                                            CommandParameter="{Binding .}" />
+                                </SwipeItems>
+                            </SwipeView.RightItems>
+                            
+                            <Border StrokeShape="RoundRectangle 12" 
+                                    BackgroundColor="{AppThemeBinding Light=White, Dark=#2C2C2E}"
+                                    Stroke="{AppThemeBinding Light=#E0E0E0, Dark=#3A3A3C}"
+                                    StrokeThickness="1"
+                                    Margin="15,5"
+                                    Padding="15">
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <!-- Checkbox -->
+                                    <CheckBox Grid.Column="0"
+                                             IsChecked="{Binding IsCompleted}"
+                                             Color="#512BD4"
+                                             VerticalOptions="Center">
+                                        <CheckBox.GestureRecognizers>
+                                            <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ToggleCompleteCommand}"
+                                                                CommandParameter="{Binding .}"/>
+                                        </CheckBox.GestureRecognizers>
+                                    </CheckBox>
+
+                                    <!-- Assignment Info -->
+                                    <VerticalStackLayout Grid.Column="1" Spacing="4" Margin="10,0">
+                                        <Label Text="{Binding Title}" 
+                                               FontSize="16" 
+                                               FontAttributes="Bold"
+                                               TextColor="{AppThemeBinding Light=#1C1C1E, Dark=#FFFFFF}"
+                                               TextDecorations="{Binding IsCompleted, Converter={StaticResource BoolToStrikethroughConverter}}"/>
+                                        <Label Text="{Binding Description}" 
+                                               FontSize="12" 
+                                               TextColor="{AppThemeBinding Light=#666, Dark=#999}"
+                                               IsVisible="{Binding Description, Converter={StaticResource StringIsNotNullOrEmptyConverter}}"/>
+                                        <Label Text="{Binding StatusDisplay}" 
+                                               FontSize="12" 
+                                               TextColor="{Binding StatusColor}"
+                                               FontAttributes="Bold"/>
+                                    </VerticalStackLayout>
+
+                                    <!-- Priority Badge -->
+                                    <Border Grid.Column="2"
+                                            BackgroundColor="{Binding PriorityColor}"
+                                            StrokeShape="RoundRectangle 8"
+                                            Padding="8,4"
+                                            VerticalOptions="Start">
+                                        <Label Text="{Binding PriorityDisplay}" 
+                                               FontSize="10" 
+                                               TextColor="White"
+                                               FontAttributes="Bold"/>
+                                    </Border>
+                                </Grid>
+                            </Border>
+                        </SwipeView>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+    </Grid>
+</ContentPage>

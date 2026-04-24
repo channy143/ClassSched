@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Shell xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+       xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+       xmlns:local="clr-namespace:ClassSched.Views"
+       x:Class="ClassSched.AppShell"
+       Title="Class Sched">
+
+    <ShellContent Title="Login" ContentTemplate="{DataTemplate local:LoginPage}" Route="Login" />
+    <ShellContent Title="CreateAccount" ContentTemplate="{DataTemplate local:CreateAccountPage}" Route="CreateAccountPage" />
+
+    <TabBar>
+        <Tab Title="Schedule" Icon="{FontImageSource Glyph='📅'}">
+            <ShellContent ContentTemplate="{DataTemplate local:SchedulePage}" Route="Schedule" />
+        </Tab>
+    </TabBar>
+
+    <ShellContent Title="AddEditClass" ContentTemplate="{DataTemplate local:AddEditClassPage}" Route="AddEditClass" />
+    <ShellContent Title="Settings" ContentTemplate="{DataTemplate local:SettingsPage}" Route="Settings" />
+    <ShellContent Title="Assignments" ContentTemplate="{DataTemplate local:AssignmentsPage}" Route="Assignments" />
+
+</Shell>

@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ClassSched.ViewModels"
+             xmlns:converters="clr-namespace:ClassSched.Converters"
+             x:Class="ClassSched.Views.AddEditClassPage"
+             Title="{Binding PageTitle}"
+             Shell.FlyoutBehavior="Disabled"
+             x:DataType="vm:AddEditClassViewModel">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="15">
+            
+            <!-- Subject Name -->
+            <Label Text="Subject Name *" 
+                   FontSize="14" 
+                   FontAttributes="Bold" 
+                   TextColor="#333" />
+            <Entry Text="{Binding SubjectName}" 
+                   Placeholder="e.g., Mathematics, Physics, History"
+                   BackgroundColor="#F5F5F5"
+                   TextColor="#333" />
+
+            <!-- Room -->
+            <Label Text="Room *" 
+                   FontSize="14" 
+                   FontAttributes="Bold" 
+                   TextColor="#333" />
+            <Entry Text="{Binding Room}" 
+                   Placeholder="e.g., Room 203, Lecture Hall A"
+                   BackgroundColor="#F5F5F5"
+                   TextColor="#333" />
+
+            <!-- Instructor -->
+            <Label Text="Instructor (Optional)" 
+                   FontSize="14" 
+                   FontAttributes="Bold" 
+                   TextColor="#333" />
+            <Entry Text="{Binding Instructor}" 
+                   Placeholder="e.g., Prof. Smith"
+                   BackgroundColor="#F5F5F5"
+                   TextColor="#333" />
+
+            <!-- Day of Week -->
+            <Label Text="Day of Week *" 
+                   FontSize="14" 
+                   FontAttributes="Bold" 
+                   TextColor="#333" />
+            <Picker Title="Select Day"
+                    ItemsSource="{Binding DaysOfWeek}"
+                    SelectedItem="{Binding SelectedDay}"
+                    BackgroundColor="#F5F5F5"
+                    TextColor="#333" />
+
+            <!-- Time Selection -->
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="15">
+                <VerticalStackLayout Grid.Column="0">
+                    <Label Text="Start Time *" 
+                           FontSize="14" 
+                           FontAttributes="Bold" 
+                           TextColor="#333" />
+                    <TimePicker Time="{Binding StartTime}"
+                               BackgroundColor="#F5F5F5"
+                               TextColor="#333" />
+                </VerticalStackLayout>
+                
+                <VerticalStackLayout Grid.Column="1">
+                    <Label Text="End Time *" 
+                           FontSize="14" 
+                           FontAttributes="Bold" 
+                           TextColor="#333" />
+                    <TimePicker Time="{Binding EndTime}"
+                               BackgroundColor="#F5F5F5"
+                               TextColor="#333" />
+                </VerticalStackLayout>
+            </Grid>
+
+            <!-- Color Selection -->
+            <Label Text="Color Tag" 
+                   FontSize="14" 
+                   FontAttributes="Bold" 
+                   TextColor="#333" />
+            <CollectionView ItemsSource="{Binding ColorOptions}"
+                           SelectionMode="Single"
+                           SelectedItem="{Binding ColorCode}">
+                <CollectionView.ItemsLayout>
+                    <GridItemsLayout Orientation="Horizontal" Span="4" />
+                </CollectionView.ItemsLayout>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="x:String">
+                        <Border StrokeShape="RoundRectangle 8"
+                                Stroke="{Binding ., Converter={StaticResource ColorFromHexConverter}}"
+                                BackgroundColor="{Binding ., Converter={StaticResource ColorFromHexConverter}}"
+                                StrokeThickness="2"
+                                HeightRequest="40"
+                                WidthRequest="40"
+                                Margin="5">
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <!-- Selected Color Preview -->
+            <HorizontalStackLayout Spacing="10" VerticalOptions="Center">
+                <Label Text="Selected:" 
+                       FontSize="14" 
+                       TextColor="#666" />
+                <BoxView WidthRequest="30"
+                        HeightRequest="30"
+                        CornerRadius="5"
+                        BackgroundColor="{Binding ColorCode, Converter={StaticResource ColorFromHexConverter}}" />
+            </HorizontalStackLayout>
+
+            <!-- Buttons -->
+            <Button Text="Save Class"
+                   BackgroundColor="#512BD4"
+                   TextColor="White"
+                   FontAttributes="Bold"
+                   CornerRadius="25"
+                   HeightRequest="50"
+                   Command="{Binding SaveClassCommand}"
+                   Margin="0,20,0,0" />
+
+            <Button Text="Cancel"
+                   BackgroundColor="#E0E0E0"
+                   TextColor="#666"
+                   FontAttributes="Bold"
+                   CornerRadius="25"
+                   HeightRequest="50"
+                   Command="{Binding CancelCommand}" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converters:ColorFromHexConverter x:Key="ColorFromHexConverter" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+</ContentPage>

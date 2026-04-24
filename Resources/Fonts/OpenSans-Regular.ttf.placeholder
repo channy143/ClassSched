@@ -1,0 +1,9 @@
+# Placeholder for OpenSans-Regular.ttf font file
+# In a real project, download the OpenSans font files from Google Fonts:
+# https://fonts.google.com/specimen/Open+Sans
+# 
+# Required files:
+# - OpenSans-Regular.ttf
+# - OpenSans-Semibold.ttf
+#
+# Place them in this folder (Resources/Fonts/)

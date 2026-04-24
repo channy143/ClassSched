@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ClassSched.ViewModels"
+             xmlns:models="clr-namespace:ClassSched.Models"
+             xmlns:converters="clr-namespace:ClassSched.Converters"
+             x:Class="ClassSched.Views.CalendarPage"
+             x:DataType="vm:CalendarViewModel"
+             Title="Calendar View"
+             Shell.FlyoutBehavior="Disabled">
+
+    <ContentPage.ToolbarItems>
+    </ContentPage.ToolbarItems>
+
+    <Grid RowDefinitions="Auto,Auto,*" Padding="15">
+        
+        <!-- Month Navigation -->
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,15">
+            <Button Grid.Column="0" 
+                    Text="←" 
+                    FontSize="20"
+                    BackgroundColor="Transparent"
+                    TextColor="#512BD4"
+                    Command="{Binding PreviousMonthCommand}"/>
+            
+            <Label Grid.Column="1" 
+                   Text="{Binding MonthYearDisplay}" 
+                   FontSize="20" 
+                   FontAttributes="Bold"
+                   HorizontalOptions="Center"
+                   VerticalOptions="Center"
+                   TextColor="{AppThemeBinding Light=#1C1C1E, Dark=#FFFFFF}"/>
+            
+            <Button Grid.Column="2" 
+                    Text="→" 
+                    FontSize="20"
+                    BackgroundColor="Transparent"
+                    TextColor="#512BD4"
+                    Command="{Binding NextMonthCommand}"/>
+        </Grid>
+
+        <!-- Today Button -->
+        <Button Grid.Row="1"
+                Text="Go to Today"
+                FontSize="12"
+                BackgroundColor="#512BD4"
+                TextColor="White"
+                CornerRadius="15"
+                HeightRequest="32"
+                Padding="15,0"
+                HorizontalOptions="Center"
+                Command="{Binding GoToTodayAsyncCommand}"
+                Margin="0,0,0,15"/>
+
+        <!-- Calendar Grid -->
+        <ScrollView Grid.Row="2">
+            <VerticalStackLayout Spacing="10">
+                
+                <!-- Day Headers -->
+                <Grid ColumnDefinitions="*,*,*,*,*,*,*" Margin="0,0,0,8">
+                    <Label Grid.Column="0" Text="Mon" HorizontalOptions="Center" FontSize="14" TextColor="{AppThemeBinding Light=#666, Dark=#AAA}" FontAttributes="Bold"/>
+                    <Label Grid.Column="1" Text="Tue" HorizontalOptions="Center" FontSize="14" TextColor="{AppThemeBinding Light=#666, Dark=#AAA}" FontAttributes="Bold"/>
+                    <Label Grid.Column="2" Text="Wed" HorizontalOptions="Center" FontSize="14" TextColor="{AppThemeBinding Light=#666, Dark=#AAA}" FontAttributes="Bold"/>
+                    <Label Grid.Column="3" Text="Thu" HorizontalOptions="Center" FontSize="14" TextColor="{AppThemeBinding Light=#666, Dark=#AAA}" FontAttributes="Bold"/>
+                    <Label Grid.Column="4" Text="Fri" HorizontalOptions="Center" FontSize="14" TextColor="{AppThemeBinding Light=#666, Dark=#AAA}" FontAttributes="Bold"/>
+                    <Label Grid.Column="5" Text="Sat" HorizontalOptions="Center" FontSize="14" TextColor="{AppThemeBinding Light=#666, Dark=#AAA}" FontAttributes="Bold"/>
+                    <Label Grid.Column="6" Text="Sun" HorizontalOptions="Center" FontSize="14" TextColor="{AppThemeBinding Light=#666, Dark=#AAA}" FontAttributes="Bold"/>
+                </Grid>
+
+                <!-- Calendar Days Grid -->
+                <Grid x:Name="CalendarGrid" 
+                      ColumnDefinitions="*,*,*,*,*,*,*" 
+                      RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto"
+                      HeightRequest="320"
+                      Margin="0,5">
+                    <BindableLayout.ItemsSource>
+                        <Binding Path="CalendarDays" />
+                    </BindableLayout.ItemsSource>
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="vm:CalendarDay">
+                            <Border Grid.Column="{Binding Column}"
+                                    Grid.Row="{Binding Row}"
+                                    StrokeShape="RoundRectangle 10"
+                                    BackgroundColor="{Binding BackgroundColor}"
+                                    Stroke="{Binding IsToday, Converter={StaticResource BoolToColorConverter}, ConverterParameter='#512BD4|Transparent'}"
+                                    StrokeThickness="{Binding IsToday, Converter={StaticResource BoolToIntConverter}, ConverterParameter='2|0'}"
+                                    MinimumHeightRequest="48"
+                                    MinimumWidthRequest="44"
+                                    Margin="2"
+                                    IsVisible="{Binding IsEmpty, Converter={StaticResource InvertedBoolConverter}}">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectDateAsyncCommand}"
+                                                          CommandParameter="{Binding .}"/>
+                                </Border.GestureRecognizers>
+                                <VerticalStackLayout Spacing="2" Padding="2">
+                                    <Label Text="{Binding DayNumber}" 
+                                           FontSize="16"
+                                           FontAttributes="Bold"
+                                           TextColor="{Binding TextColor}"
+                                           HorizontalOptions="Center"
+                                           InputTransparent="True"/>
+                                    
+                                    <!-- Class indicator dot -->
+                                    <BoxView WidthRequest="6"
+                                             HeightRequest="6"
+                                             CornerRadius="3"
+                                             BackgroundColor="{Binding IndicatorColor}"
+                                             HorizontalOptions="Center"
+                                             IsVisible="{Binding HasClasses}"
+                                             InputTransparent="True"/>
+                                </VerticalStackLayout>
+                            </Border>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </Grid>
+
+                <!-- Selected Date Display -->
+                <Label Text="{Binding SelectedDateDisplay}" 
+                       FontSize="18" 
+                       FontAttributes="Bold"
+                       TextColor="{AppThemeBinding Light=#1C1C1E, Dark=#FFFFFF}"
+                       Margin="0,15,0,5"/>
+
+                <!-- Classes for Selected Day -->
+                <CollectionView ItemsSource="{Binding SelectedDayClasses}"
+                                EmptyView="No classes scheduled for this day.">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="models:ClassSchedule">
+                            <Border StrokeShape="RoundRectangle 10" 
+                                    BackgroundColor="{AppThemeBinding Light=White, Dark=#2C2C2E}"
+                                    Stroke="{AppThemeBinding Light=#E0E0E0, Dark=#3A3A3C}"
+                                    StrokeThickness="1"
+                                    Margin="0,5"
+                                    Padding="12">
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <!-- Color Indicator -->
+                                    <BoxView Grid.Column="0"
+                                             WidthRequest="4"
+                                             HeightRequest="40"
+                                             CornerRadius="2"
+                                             BackgroundColor="{Binding ColorCode}"
+                                             Margin="0,0,10,0"/>
+                                    
+                                    <!-- Class Info -->
+                                    <VerticalStackLayout Grid.Column="1" Spacing="3">
+                                        <Label Text="{Binding SubjectName}" 
+                                               FontSize="14" 
+                                               FontAttributes="Bold"
+                                               TextColor="{AppThemeBinding Light=#1C1C1E, Dark=#FFFFFF}"/>
+                                        <Label Text="{Binding Room}" 
+                                               FontSize="12" 
+                                               TextColor="{AppThemeBinding Light=#666, Dark=#999}"/>
+                                    </VerticalStackLayout>
+                                    
+                                    <!-- Time -->
+                                    <Label Grid.Column="2"
+                                           Text="{Binding TimeDisplay}" 
+                                           FontSize="12" 
+                                           TextColor="#512BD4"
+                                           FontAttributes="Bold"
+                                           VerticalOptions="Center"/>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converters:BoolToColorConverter x:Key="BoolToColorConverter"/>
+            <converters:BoolToIntConverter x:Key="BoolToIntConverter"/>
+            <converters:InvertedBoolConverter x:Key="InvertedBoolConverter"/>
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+</ContentPage>

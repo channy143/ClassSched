@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ClassSched.ViewModels"
+             x:Class="ClassSched.Views.LoginPage"
+             x:DataType="vm:LoginViewModel"
+             Title="Login"
+             Shell.FlyoutBehavior="Disabled"
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="{AppThemeBinding Light=#F5F5F5, Dark=#1C1C1E}">
+
+    <ScrollView>
+        <VerticalStackLayout Spacing="20" Padding="30" VerticalOptions="Center">
+
+            <!-- Logo/Icon -->
+            <Frame BackgroundColor="#512BD4" 
+                   WidthRequest="80" 
+                   HeightRequest="80" 
+                   CornerRadius="40"
+                   HasShadow="False"
+                   Padding="0"
+                   Margin="0,0,0,10">
+                <Label Text="CS" 
+                       TextColor="White" 
+                       FontSize="32" 
+                       FontAttributes="Bold"
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center"/>
+            </Frame>
+
+            <!-- Title -->
+            <Label Text="Welcome Back!" 
+                   FontSize="28" 
+                   FontAttributes="Bold"
+                   TextColor="{AppThemeBinding Light=#1C1C1E, Dark=#FFFFFF}"
+                   HorizontalOptions="Center"/>
+
+            <Label Text="Sign in to continue" 
+                   FontSize="14" 
+                   TextColor="{AppThemeBinding Light=#8E8E93, Dark=#8E8E93}"
+                   HorizontalOptions="Center"
+                   Margin="0,-10,0,20"/>
+
+            <!-- Email Entry -->
+            <Frame BackgroundColor="{AppThemeBinding Light=White, Dark=#2C2C2E}" 
+                   BorderColor="{AppThemeBinding Light=#E5E5EA, Dark=#3A3A3C}" 
+                   CornerRadius="10" 
+                   Padding="15,5">
+                <VerticalStackLayout Spacing="5">
+                    <Label Text="Email" 
+                           FontSize="12" 
+                           TextColor="#8E8E93"/>
+                    <Entry Text="{Binding Email}" 
+                           Placeholder="Enter your email"
+                           Keyboard="Email"
+                           TextColor="{AppThemeBinding Light=#1C1C1E, Dark=#FFFFFF}"
+                           PlaceholderColor="#C7C7CC"/>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Password Entry -->
+            <Frame BackgroundColor="{AppThemeBinding Light=White, Dark=#2C2C2E}" 
+                   BorderColor="{AppThemeBinding Light=#E5E5EA, Dark=#3A3A3C}" 
+                   CornerRadius="10" 
+                   Padding="15,5">
+                <VerticalStackLayout Spacing="5">
+                    <Label Text="Password" 
+                           FontSize="12" 
+                           TextColor="#8E8E93"/>
+                    <Grid ColumnDefinitions="*, Auto">
+                        <Entry Grid.Column="0"
+                               Text="{Binding Password}" 
+                               Placeholder="Enter your password"
+                               IsPassword="{Binding IsPasswordHidden}"
+                               TextColor="{AppThemeBinding Light=#1C1C1E, Dark=#FFFFFF}"
+                               PlaceholderColor="#C7C7CC"/>
+                        <Button Grid.Column="1"
+                                Text="{Binding PasswordToggleText}"
+                                FontSize="12"
+                                BackgroundColor="Transparent"
+                                TextColor="#512BD4"
+                                Padding="5"
+                                Command="{Binding TogglePasswordCommand}"/>
+                    </Grid>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Error Message -->
+            <Label Text="{Binding ErrorMessage}" 
+                   TextColor="#FF3B30"
+                   FontSize="14"
+                   IsVisible="{Binding HasError}"
+                   HorizontalOptions="Center"/>
+
+            <!-- Login Button -->
+            <Button Text="Sign In" 
+                    BackgroundColor="#512BD4"
+                    TextColor="White"
+                    FontAttributes="Bold"
+                    FontSize="16"
+                    CornerRadius="10"
+                    HeightRequest="50"
+                    Command="{Binding LoginCommand}"
+                    IsEnabled="{Binding IsNotBusy}"/>
+
+            <!-- Loading Indicator -->
+            <ActivityIndicator IsRunning="{Binding IsBusy}" 
+                               IsVisible="{Binding IsBusy}"
+                               Color="#512BD4"/>
+
+            <!-- Create Account Link -->
+            <HorizontalStackLayout HorizontalOptions="Center" Spacing="5">
+                <Label Text="Don't have an account?" 
+                       TextColor="{AppThemeBinding Light=#8E8E93, Dark=#8E8E93}"
+                       FontSize="14"/>
+                <Label Text="Create one" 
+                       TextColor="#512BD4"
+                       FontAttributes="Bold"
+                       FontSize="14">
+                    <Label.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding NavigateToCreateAccountCommand}"/>
+                    </Label.GestureRecognizers>
+                </Label>
+            </HorizontalStackLayout>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

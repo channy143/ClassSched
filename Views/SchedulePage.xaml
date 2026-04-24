@@ -1,0 +1,389 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ClassSched.ViewModels"
+             xmlns:models="clr-namespace:ClassSched.Models"
+             xmlns:converters="clr-namespace:ClassSched.Converters"
+             xmlns:sys="clr-namespace:System;assembly=mscorlib"
+             x:Class="ClassSched.Views.SchedulePage"
+             Title="Class Sched"
+             x:DataType="vm:ScheduleViewModel">
+
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Settings" Command="{Binding GoToSettingsCommand}" IconImageSource="{FontImageSource Glyph='⚙️'}" />
+        <ToolbarItem Text="Add" Command="{Binding AddClassCommand}" IconImageSource="{FontImageSource Glyph='+'}" />
+    </ContentPage.ToolbarItems>
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Header -->
+        <VerticalStackLayout Grid.Row="0" Padding="20,15" BackgroundColor="#512BD4">
+            <Grid ColumnDefinitions="*,Auto">
+                <VerticalStackLayout Grid.Column="0">
+                    <Label Text="My Schedule" 
+                           FontSize="24" 
+                           FontAttributes="Bold" 
+                           TextColor="White" />
+                    <Label Text="{Binding Source={x:Static sys:DateTime.Today}, StringFormat='{}{0:dddd, MMMM dd, yyyy}'}" 
+                           FontSize="14" 
+                           TextColor="White" 
+                           Opacity="0.8" />
+                </VerticalStackLayout>
+                
+                <!-- View Calendar Button -->
+                <Button Grid.Column="1"
+                        Text="📅 View"
+                        FontSize="12"
+                        BackgroundColor="White"
+                        TextColor="#512BD4"
+                        CornerRadius="15"
+                        HeightRequest="36"
+                        Padding="12,0"
+                        VerticalOptions="Center"
+                        Command="{Binding GoToCalendarCommand}"/>
+            </Grid>
+        </VerticalStackLayout>
+
+        <!-- Content -->
+        <RefreshView Grid.Row="1" 
+                     IsRefreshing="{Binding IsLoading}" 
+                     Command="{Binding RefreshCommand}">
+            <ScrollView>
+                <VerticalStackLayout Padding="15" Spacing="15">
+                    
+                    <!-- Statistics Cards -->
+                    <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
+                        <!-- Classes Today -->
+                        <Border Grid.Column="0" 
+                                StrokeShape="RoundRectangle 12" 
+                                BackgroundColor="#512BD4"
+                                Padding="10">
+                            <VerticalStackLayout Spacing="2">
+                                <Label Text="{Binding ClassesTodayCount}" 
+                                       FontSize="28" 
+                                       FontAttributes="Bold" 
+                                       TextColor="White"
+                                       HorizontalOptions="Center"/>
+                                <Label Text="Today" 
+                                       FontSize="11" 
+                                       TextColor="White"
+                                       Opacity="0.9"
+                                       HorizontalOptions="Center"/>
+                            </VerticalStackLayout>
+                        </Border>
+
+                        <!-- Total Hours -->
+                        <Border Grid.Column="1" 
+                                StrokeShape="RoundRectangle 12" 
+                                BackgroundColor="#FF6B6B"
+                                Padding="10">
+                            <VerticalStackLayout Spacing="2">
+                                <Label Text="{Binding TotalHoursThisWeek, StringFormat='{}{0:F1}'}" 
+                                       FontSize="28" 
+                                       FontAttributes="Bold" 
+                                       TextColor="White"
+                                       HorizontalOptions="Center"/>
+                                <Label Text="Hours/Week" 
+                                       FontSize="11" 
+                                       TextColor="White"
+                                       Opacity="0.9"
+                                       HorizontalOptions="Center"/>
+                            </VerticalStackLayout>
+                        </Border>
+
+                        <!-- Next Class -->
+                        <Border Grid.Column="2" 
+                                StrokeShape="RoundRectangle 12" 
+                                BackgroundColor="#4CAF50"
+                                Padding="10">
+                            <VerticalStackLayout Spacing="2">
+                                <Label Text="{Binding NextClassTimeDisplay}" 
+                                       FontSize="14" 
+                                       FontAttributes="Bold" 
+                                       TextColor="White"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"
+                                       LineBreakMode="TailTruncation"/>
+                                <Label Text="Next" 
+                                       FontSize="11" 
+                                       TextColor="White"
+                                       Opacity="0.9"
+                                       HorizontalOptions="Center"/>
+                            </VerticalStackLayout>
+                        </Border>
+                    </Grid>
+
+                    <!-- Busiest Day -->
+                    <HorizontalStackLayout HorizontalOptions="Center" Spacing="5">
+                        <Label Text="Busiest Day:" 
+                               FontSize="14" 
+                               TextColor="{AppThemeBinding Light=#666, Dark=#999}"/>
+                        <Label Text="{Binding BusiestDayDisplay}" 
+                               FontSize="14" 
+                               FontAttributes="Bold"
+                               TextColor="#512BD4"/>
+                    </HorizontalStackLayout>
+
+                    <!-- Search & Filter -->
+                    <Frame BackgroundColor="{AppThemeBinding Light=White, Dark=#2C2C2E}" 
+                           BorderColor="{AppThemeBinding Light=#E5E5EA, Dark=#3A3A3C}" 
+                           CornerRadius="10" 
+                           Padding="10,5">
+                        <Grid ColumnDefinitions="Auto,*,Auto">
+                            <Label Grid.Column="0" Text="🔍" FontSize="16" VerticalOptions="Center"/>
+                            <Entry Grid.Column="1" 
+                                   Text="{Binding SearchText}" 
+                                   Placeholder="Search classes..."
+                                   PlaceholderColor="#C7C7CC"
+                                   TextColor="{AppThemeBinding Light=#1C1C1E, Dark=#FFFFFF}"/>
+                            <Button Grid.Column="2"
+                                    Text="✕"
+                                    FontSize="12"
+                                    BackgroundColor="Transparent"
+                                    TextColor="#512BD4"
+                                    Padding="5"
+                                    Command="{Binding ClearFiltersCommand}"
+                                    IsVisible="{Binding SearchText, Converter={StaticResource StringIsNotNullOrEmptyConverter}}"/>
+                        </Grid>
+                    </Frame>
+
+                    <!-- Day Filter Chips -->
+                    <CollectionView ItemsSource="{Binding WeeklyClasses}" 
+                                    ItemsLayout="HorizontalList"
+                                    HeightRequest="40">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="{x:Type x:Object}">
+                                <Button Text="{Binding Key}"
+                                        FontSize="12"
+                                        CornerRadius="15"
+                                        HeightRequest="30"
+                                        Padding="15,0"
+                                        Margin="0,0,5,0"
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.FilterDayChangedCommand}"
+                                        CommandParameter="{Binding Key}"/>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+
+                    <!-- Upcoming Assignments Widget -->
+                    <Grid IsVisible="{Binding UpcomingAssignments.Count, Converter={StaticResource IntToBoolConverter}}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Label Grid.Column="0" Text="Upcoming Assignments" 
+                               FontSize="16" 
+                               FontAttributes="Bold" 
+                               TextColor="{AppThemeBinding Light=#1C1C1E, Dark=#FFFFFF}"/>
+                        <Label Grid.Column="1" Text="View All →" 
+                               FontSize="12" 
+                               TextColor="#512BD4"
+                               FontAttributes="Bold">
+                            <Label.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding GoToAssignmentsCommand}"/>
+                            </Label.GestureRecognizers>
+                        </Label>
+                    </Grid>
+
+                    <CollectionView ItemsSource="{Binding UpcomingAssignments}" 
+                                    HeightRequest="100"
+                                    IsVisible="{Binding UpcomingAssignments.Count, Converter={StaticResource IntToBoolConverter}}">
+                        <CollectionView.ItemsLayout>
+                            <LinearItemsLayout Orientation="Horizontal" ItemSpacing="10"/>
+                        </CollectionView.ItemsLayout>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="models:Assignment">
+                                <Border StrokeShape="RoundRectangle 12" 
+                                        BackgroundColor="{AppThemeBinding Light=White, Dark=#2C2C2E}"
+                                        Stroke="{AppThemeBinding Light=#E0E0E0, Dark=#3A3A3C}"
+                                        StrokeThickness="1"
+                                        Padding="15,10"
+                                        WidthRequest="200">
+                                    <VerticalStackLayout Spacing="4">
+                                        <Label Text="{Binding Title}" 
+                                               FontSize="14" 
+                                               FontAttributes="Bold"
+                                               LineBreakMode="TailTruncation"
+                                               TextColor="{AppThemeBinding Light=#1C1C1E, Dark=#FFFFFF}"/>
+                                        <Label Text="{Binding StatusDisplay}" 
+                                               FontSize="12" 
+                                               TextColor="{Binding StatusColor}"
+                                               FontAttributes="Bold"/>
+                                        <Border BackgroundColor="{Binding PriorityColor}"
+                                                StrokeShape="RoundRectangle 4"
+                                                Padding="5,2"
+                                                HorizontalOptions="Start">
+                                            <Label Text="{Binding PriorityDisplay}" 
+                                                   FontSize="10" 
+                                                   TextColor="White"/>
+                                        </Border>
+                                    </VerticalStackLayout>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+
+                    <!-- Today's Classes -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Label Grid.Column="0" Text="Today's Classes" 
+                               FontSize="18" 
+                               FontAttributes="Bold" 
+                               TextColor="{AppThemeBinding Light=#1C1C1E, Dark=#FFFFFF}"/>
+                        <Label Grid.Column="1" 
+                               Text="{Binding TodayClasses.Count, StringFormat='{}{0} classes'}"
+                               FontSize="12"
+                               TextColor="#512BD4"
+                               VerticalOptions="Center"/>
+                    </Grid>
+
+                    <CollectionView ItemsSource="{Binding TodayClasses}"
+                                    EmptyView="No classes scheduled for today."
+                                    x:DataType="vm:ScheduleViewModel">
+                                <CollectionView.ItemTemplate>
+                                    <DataTemplate x:DataType="models:ClassSchedule">
+                                        <SwipeView>
+                                            <SwipeView.RightItems>
+                                                <SwipeItems>
+                                                    <SwipeItem Text="Edit" 
+                                                            BackgroundColor="#3498DB"
+                                                            Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.EditClassCommand}"
+                                                            CommandParameter="{Binding .}" />
+                                                    <SwipeItem Text="Delete" 
+                                                            BackgroundColor="#E74C3C"
+                                                            Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.DeleteClassCommand}"
+                                                            CommandParameter="{Binding .}" />
+                                                </SwipeItems>
+                                            </SwipeView.RightItems>
+                                            
+                                            <Border StrokeShape="RoundRectangle 12" 
+                                                    BackgroundColor="White"
+                                                    Stroke="#E0E0E0"
+                                                    StrokeThickness="1"
+                                                    Margin="0,5"
+                                                    Padding="15">
+                                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                                    <!-- Color Indicator -->
+                                                    <BoxView Grid.Column="0"
+                                                             WidthRequest="6"
+                                                             HeightRequest="50"
+                                                             CornerRadius="3"
+                                                             BackgroundColor="{Binding ColorCode}"
+                                                             Margin="0,0,12,0" />
+ 
+                                                    <!-- Class Info -->
+                                                    <VerticalStackLayout Grid.Column="1" Spacing="4">
+                                                        <Label Text="{Binding SubjectName}" 
+                                                                FontSize="16" 
+                                                                FontAttributes="Bold" 
+                                                                TextColor="#333" />
+                                                        <Label Text="{Binding Room}" 
+                                                                FontSize="14" 
+                                                                TextColor="#666" />
+                                                        <Label Text="{Binding Instructor}" 
+                                                                FontSize="12" 
+                                                                TextColor="#999"
+                                                                IsVisible="{Binding Instructor, Converter={StaticResource StringIsNotNullOrEmptyConverter}}" />
+                                                        <Label Text="{Binding TimeDisplay}" 
+                                                                FontSize="12" 
+                                                                TextColor="#512BD4" 
+                                                                FontAttributes="Bold" />
+                                                    </VerticalStackLayout>
+ 
+                                                    <!-- Day Badge -->
+                                                    <Border Grid.Column="2"
+                                                            BackgroundColor="#F0F0F0"
+                                                            StrokeShape="RoundRectangle 8"
+                                                            Padding="8,4">
+                                                        <Label Text="TODAY" 
+                                                                FontSize="10" 
+                                                                TextColor="#512BD4"
+                                                                FontAttributes="Bold" />
+                                                    </Border>
+                                                </Grid>
+                                            </Border>
+                                        </SwipeView>
+                                    </DataTemplate>
+                                </CollectionView.ItemTemplate>
+                            </CollectionView>
+
+                    <!-- Weekly Overview -->
+                    <Label Text="Weekly Overview" 
+                           FontSize="18" 
+                           FontAttributes="Bold" 
+                           TextColor="#333"
+                           Margin="0,20,0,0" />
+
+<CollectionView x:Name="weeklyClassesCollectionView"
+                ItemsSource="{Binding WeeklyClasses}"
+                                      IsGrouped="True"
+                                      EmptyView="No classes scheduled yet."
+                                      x:DataType="vm:ScheduleViewModel">
+                          <CollectionView.GroupHeaderTemplate>
+                              <DataTemplate>
+                                  <Label Text="{Binding Key}" 
+                                         FontSize="16" 
+                                         FontAttributes="Bold" 
+                                         TextColor="#512BD4"
+                                         Margin="0,10,0,5" />
+                              </DataTemplate>
+                          </CollectionView.GroupHeaderTemplate>
+                          <CollectionView.ItemTemplate>
+                              <DataTemplate x:DataType="models:ClassSchedule">
+                                  <Border StrokeShape="RoundRectangle 10" 
+                                          BackgroundColor="White"
+                                          Stroke="#E0E0E0"
+                                          StrokeThickness="1"
+                                          Margin="0,3"
+                                          Padding="12">
+                                      <Grid ColumnDefinitions="*,Auto">
+                                          <VerticalStackLayout Grid.Column="0" Spacing="2">
+                                              <Label Text="{Binding SubjectName}" 
+                                                     FontSize="14" 
+                                                     FontAttributes="Bold" 
+                                                     TextColor="#333" />
+                                              <Label Text="{Binding Room}" 
+                                                     FontSize="12" 
+                                                     TextColor="#666" />
+                                          </VerticalStackLayout>
+                                          <Label Grid.Column="1"
+                                                 Text="{Binding TimeDisplay}" 
+                                                 FontSize="12" 
+                                                 TextColor="#999" />
+                                      </Grid>
+                                  </Border>
+                              </DataTemplate>
+                          </CollectionView.ItemTemplate>
+                      </CollectionView>
+
+                    <!-- Add Button (Floating style at bottom) -->
+                    <Button Text="+ Add New Class"
+                            BackgroundColor="#512BD4"
+                            TextColor="White"
+                            FontAttributes="Bold"
+                            CornerRadius="25"
+                            HeightRequest="50"
+                            Command="{Binding AddClassCommand}"
+                            Margin="0,20" />
+
+                </VerticalStackLayout>
+            </ScrollView>
+        </RefreshView>
+
+        <!-- Loading Indicator -->
+        <ActivityIndicator Grid.Row="1"
+                          IsRunning="{Binding IsLoading}"
+                          IsVisible="{Binding IsLoading}"
+                          HorizontalOptions="Center"
+                          VerticalOptions="Center" />
+    </Grid>
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converters:StringIsNotNullOrEmptyConverter x:Key="StringIsNotNullOrEmptyConverter" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+</ContentPage>
